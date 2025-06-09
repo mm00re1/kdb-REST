@@ -1,0 +1,36 @@
+.navbar {
+    background-color: #161413;
+    padding: 10px;
+   /* padding-bottom: 0px;*/
+  }
+  
+  .navbar-list {
+    list-style-type: none;
+    display: flex;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .navbar-item {
+    margin-right: 10px;
+  }
+  
+  .navbar-item-bold {
+    margin-right: 10px;
+    font-weight: bold;
+  }
+
+  .navbar-item:last-child {
+    margin-right: 0; /* Updated */
+  }
+  
+  .navbar-item a {
+    text-decoration: none;
+    color: #1E90FF;
+    font-weight: bold;
+  }
+  
+  .navbar-item a:hover {
+    color: #1E90FF;
+  }
