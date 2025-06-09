@@ -1,0 +1,105 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "kdb REST API",
+    "version": "1.0.0",
+    "description": "Example REST API for querying kdb tables."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5000",
+      "description": "example HTTP server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "OAuth2PKCE": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://login.microsoftonline.com/{YOUR_TENANT_ID}/oauth2/v2.0/authorize",
+            "tokenUrl": "https://login.microsoftonline.com/{YOUR_TENANT_ID}/oauth2/v2.0/token",
+            "scopes": {
+              "api://{YOUR_KDB_SERVER_APP_ID}/read_data": "Access kdb API"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "OAuth2PKCE": ["api://{YOUR_KDB_SERVER_APP_ID}/read_data"]
+    }
+  ],
+  "paths": {
+    "/indices": {
+      "get": {
+        "summary": "Get available symbols for a table",
+        "description": "Returns a distinct list of symbols from the specified table.",
+        "parameters": [
+          {
+            "name": "table",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "trade",
+            "description": "Name of the table to query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of distinct symbols"
+          },
+          "400": {
+            "description": "Missing table parameter"
+          },
+          "403": {
+            "description": "User is not authorised to access the resource"
+          },
+          "401": {
+            "description": "Failed to authenticate the user"
+          }
+        }
+      }
+    },
+    "/data": {
+      "get": {
+        "summary": "Query recent data for a symbol",
+        "description": "Returns recent trade or quote data for a symbol over the past 10 minutes.",
+        "parameters": [
+          {
+            "name": "table",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "trade",
+            "description": "Table to query ('trade' or 'quote')"
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "TSLA",
+            "description": "Symbol (e.g. TSLA, AAPL, etc.)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Query result data"
+          },
+          "400": {
+            "description": "Missing table or index parameter"
+          },
+          "403": {
+            "description": "User is not authorised to access the resource"
+          },
+          "401": {
+            "description": "Failed to authenticate the user"
+          }
+        }
+      }
+    }
+  }
+}
