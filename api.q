@@ -25,12 +25,13 @@ tojson: (`$"qrapidjson_l64") 2:(`tojson;1);
 .api.decode_url:{[x]
     params:(!/)"S=&"0:.h.uh ssr[x;"+";" "];
     boolParams: where any params like/: ("true";"false");
-    {[params;p] params[p]:(("true";"false")!10b) params[p]}[params;] each distinct boolParams;
+    {[params;p] params[p]:(("true";"false")!10b) params[p]; params}/[params;distinct boolParams];
     multiParams:where 1 < count each group key[params];
     {[params;multiParam]
         listValues:value[params] where key[params] = multiParam; multiParam _ params;
-        params[`multiParam]:listValues; params
-    }[params;] each multiParams;
+        params[`multiParam]:listValues;
+        params
+    }/[params;multiParams];
     params
  };
 
@@ -57,8 +58,7 @@ tojson: (`$"qrapidjson_l64") 2:(`tojson;1);
   x[1]:lower[key x 1]!value x 1;                                                    //lower case keys
   a:.api.prs[x[1]`$"content-type"]b[1];                                                  //parse body depending on Content-Type
   if[99h<>type a;a:()];                                                             //if body doesn't parse to dict, ignore
-  a:@[a;where 10<>type each a;string];                                              //string non-strings for .Q.def
-  .api.ret[`json] .api.xc[`POST;.api.getf x;a,.api.prms b]                                            //run function & return as JSON
+  .api.addCORS .api.xc[`POST;.api.getf x;a,.api.prms b]                                            //run function & return as JSON
  };
 
 .z.ws:{ p:.j.k x; .u.sub[p`table;p`indices]};
