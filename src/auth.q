@@ -1,5 +1,6 @@
 
 .oauth.b64dec: (`$"libkdb-cpp-common") 2:(`$"_cpp_b64_decode";1);
+.oauth.verifyCPP : `tokverify 2:(`token_verifier;3);
 
 // If you want a native q implementation of the base64 decoder, this is a working version from https://github.com/asatirahul/cryptoq
 /.oauth.b64dec:{
@@ -58,7 +59,7 @@
     matchingKey: first select from .oauth.azure_keys[`$tenantID;`keys] where kid like token_kid;
     certDecoded: matchingKey`base64_decoded;
 
-    verified: .oauth.tokenVerifier[ certDecoded; sigDecoded; "." sv -1 _ splitToken];
+    verified: .oauth.verifyCPP[ certDecoded; sigDecoded; "." sv -1 _ splitToken];
 
     $[verified; payload; 0b]
  };
