@@ -9,6 +9,8 @@ This repository brings together multiple open-source projects to deliver a fast,
 - Swagger schemas for interactive documentation
 - WebSocket support for streaming data
 
+There is also an accompanying blog post at https://kdbsuite.com/building-a-production-grade-rest-api-in-kdb/
+
 ---
 
 ## Attributions
