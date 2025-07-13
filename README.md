@@ -4,7 +4,7 @@ This repository brings together multiple open-source projects to deliver a fast,
 
 - Support for GET and POST HTTP methods
 - JSON formatting via a high-performance C++ encoder
-- OAuth token verification in under 10ms
+- OAuth token verification in under 1ms
 - Example React frontend for interacting with the API
 - Swagger schemas for interactive documentation
 - WebSocket support for streaming data
@@ -50,6 +50,15 @@ Then, copy the `.so` file to your kdb+ directory:
 
 ```bash
 cp libkdb-cpp-common.so /path/to/q/bin/
+```
+
+### Oauth token verifier (`tokverify.so`)
+
+To build the token verifier shared object:
+
+```bash
+g++ -std=c++17 -O2 -fPIC -shared -o tokverify.so tokenverify.cpp -lcrypto -lssl
+cp tokverify.so /path/to/q/bin/
 ```
 
 ### 🧩 JSON Encoder (qrapidjson)
