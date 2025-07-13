@@ -1,6 +1,7 @@
 
-// Load in rapid json serialiser ~40 times faster than standard .j.j
+// Load in rapid json serialiser ~3 times faster than standard .j.j
 tojson: (`$"qrapidjson_l64") 2:(`tojson;1);
+tocsv:(`$":fastcsv_l64") 2:(`tocsv;1);
 
 .req.ty:@[.h.ty;`form;:;"application/x-www-form-urlencoded"];                                //add type for url encoded form, used for slash commands
 .req.ty:@[.req.ty;`json;:;"application/json"];                                               //add type for JSON (missing in older versions of q)
@@ -20,7 +21,7 @@ tojson: (`$"qrapidjson_l64") 2:(`tojson;1);
         ];
     ];
     $[(`csv in key x) and 1b ~ x`csv;
-        .h.hn["200";`csv; "\n" sv "," 0: res];
+        .h.hn["200";`csv; tocsv res];
         .h.hn["200";`json; tojson res]
     ]
  };

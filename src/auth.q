@@ -17,7 +17,7 @@
 .oauth.azure_keys:enlist[`]!enlist (::)
 
 .oauth.refresh_azure_cache:{[tenantID]
-    azure_keys: .j.k .Q.hg "https://login.microsoftonline.com/",tenantID,"/discovery/v2.0/keys";
+    azure_keys: .j.k first system"curl -s \"https://login.microsoftonline.com/",tenantID,"/discovery/v2.0/keys\"";
     azure_keys[`keys]: update base64_decoded: .oauth.b64dec each first each x5c from azure_keys[`keys];
     .oauth.azure_keys[`$tenantID]: `keys`last_refresh!(azure_keys[`keys]; .z.P);
  };
@@ -54,34 +54,13 @@
         .oauth.refresh_azure_cache[tenantID]
     ];
 
-    // Find the matching public key that has already been nase64 decoded
+    // Find the matching public key that has already been base64 decoded
     matchingKey: first select from .oauth.azure_keys[`$tenantID;`keys] where kid like token_kid;
     certDecoded: matchingKey`base64_decoded;
 
-    // Prepare the temp files for openssl - with a random file name suffix
-    randStr:16?.Q.a,.Q.n;
-    (`$certFile:":/tmp/cert_",randStr,".der") 0: enlist certDecoded;
-    (`$sigFile:":/tmp/sig_",randStr,".sig") 0: enlist sigDecoded;
-    pemFile: "/tmp/pem_",randStr;
-    pubFile: "/tmp/pub_",randStr;
+    verified: .oauth.tokenVerifier[ certDecoded; sigDecoded; "." sv -1 _ splitToken];
 
-    // TODO: Could potentially reduce total execution time from 10ms to <5ms by replacing system calls with native C OpenSSL bindings.
-    // The `qcrypt` library by https://github.com/tjcelaya/qcrypt shows how to call OpenSSL functions (e.g. SHA hashing, base64, etc.) directly from q.
-    // However, qcrypt currently does not include full support for signature verification (e.g., RSA_verify), so we still rely on shelling out to `openssl`.
-
-    // Use openssl to verify that the signature is legitimate
-    res:system "sh -c \"openssl x509 -inform DER -in ", (1_certFile),
-         " -outform PEM -out ", pemFile,
-         " && openssl x509 -in ", pemFile, " -pubkey -noout > ", pubFile,
-         " && echo -n \\\"", ("." sv -1 _ splitToken), "\\\" | openssl dgst -sha256 -verify ", 
-         pubFile, " -signature ", (1_sigFile), "\"";
-
-    // cleanup the temp files
-    hdel `$":",pemFile;
-    hdel `$":",pubFile;
-    hdel `$certFile;
-    hdel `$sigFile;
-    $[not first[res] ~ "Verified OK"; 0b; payload]
+    $[verified; payload; 0b]
  };
 
 .oauth.checkToken:{[token;tenantID;clientID]
@@ -91,7 +70,7 @@
     if[not payload[`iss] ~ "https://sts.windows.net/",tenantID,"/"; '"Invalid issuer - expected https://sts.windows.net/",tenantID,"/"];
     if[not payload[`aud] ~ "api://",clientID; '"Invalid audience - expected api://",clientID,"/..."];
     // token exp is measured in seconds since 1970.01.01, kdb times are measured in seconds since 2000.01.01 - Minus this diff from the token exp times
-    currentTime:"J"$-9_string `long$.z.P;
+    currentTime:"J"$-9_string `long$.z.p;
     unixKdbOffset:neg (24*3600*`long$1970.01.01);
     if[0 < currentTime - payload[`exp] - unixKdbOffset; '"Token has expired"];
     if[0 > currentTime - payload[`nbf] - unixKdbOffset; '"Token is not yet valid (not before condition)"];
