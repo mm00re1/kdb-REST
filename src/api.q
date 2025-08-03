@@ -1,27 +1,27 @@
 
-// Load in rapid json serialiser ~3 times faster than standard .j.j
+// Load in rapid json serialiser ~4 times faster than standard .j.j
 tojson: (`$"qrapidjson_l64") 2:(`tojson;1);
-tocsv:(`$":fastcsv_l64") 2:(`tocsv;1);
+// tocsv:(`$":fastcsv_l64") 2:(`tocsv;1);  // cpp based csv encoder in progress
 
-.req.ty:@[.h.ty;`form;:;"application/x-www-form-urlencoded"];                                //add type for url encoded form, used for slash commands
-.req.ty:@[.req.ty;`json;:;"application/json"];                                               //add type for JSON (missing in older versions of q)
+.req.ty:@[.h.ty;`form;:;"application/x-www-form-urlencoded"];           //add type for url encoded form, used for slash commands
+.req.ty:@[.req.ty;`json;:;"application/json"];                          //add type for JSON (missing in older versions of q)
 
 .api.funcs:([func:`$()]methods:())                              //config of funcs
 .api.define:{[f;m].api.funcs[f]:enlist[`methods]!enlist $[`~m;`POST`GET;(),m]} //function to define an API function
 
-.api.xc:{[m;f;x] /m- HTTP method,f - function name (sym), x - arguments
+.api.execute:{[method;func;params]
     /* execute given function with arguments, error trap & return result as JSON */
-    if[not f in key .api.funcs; :.h.hn["404";`json;.api.errFormat "Endpoint /",string[f]," does not exist"]];
-    if[not m in .api.funcs[f;`methods]; :.h.hn["405";`json;.api.errFormat string[m]," method not allowed on /",string[f]]];
-    res:@[value f;x;{x}];
+    if[not func in key .api.funcs; :.h.hn["404";`json;.api.errFormat "Endpoint /",string[func]," does not exist"]];
+    if[not method in .api.funcs[func;`methods]; :.h.hn["405";`json;.api.errFormat string[method]," method not allowed on /",string[func]]];
+    res:@[value func;params;{x}];
     if[10h = type res;
         :$[any res like/: ("400 *";"401 *";"403 *");
             .h.hn[3#res;`json;.api.errFormat 4_res];
             .h.hn["500";`json;.api.errFormat "Internal Server Error -> ",res]
         ];
     ];
-    $[(`csv in key x) and 1b ~ x`csv;
-        .h.hn["200";`csv; tocsv res];
+    $[(`csv in key params) and 1b ~ params`csv;
+        .h.hn["200";`csv; "\n" sv "," 0: res];
         .h.hn["200";`json; tojson res]
     ]
  };
@@ -32,7 +32,8 @@ tocsv:(`$":fastcsv_l64") 2:(`tocsv;1);
     params:{[params;p] params[p]:(("true";"false")!10b) params[p]; params}/[params;distinct boolParams];
     multiParams:where 1 < count each group key[params];
     params:{[params;multiParam]
-        listValues:value[params] where key[params] = multiParam; multiParam _ params;
+        listValues:value[params] where key[params] = multiParam;
+        params: multiParam _ params;
         params[multiParam]:listValues;
         params
     }/[params;multiParams];
@@ -53,7 +54,7 @@ tocsv:(`$":fastcsv_l64") 2:(`tocsv;1);
 
 .z.ph:{[x] /x - (request;headers)
     /* HTTP GET handler */
-    .api.addCORS .api.xc[`GET;.api.getf x;.api.prms x]
+    .api.addCORS .api.execute[`GET;.api.getf x;.api.prms x]
  };
 
 .z.pp:{[x] /x - (request;headers)
@@ -62,7 +63,7 @@ tocsv:(`$":fastcsv_l64") 2:(`tocsv;1);
   x[1]:lower[key x 1]!value x 1;                                                      //lower case keys
   a:.api.prs[x[1]`$"content-type"]b[1];                                               //parse body depending on Content-Type
   if[99h<>type a;a:()];                                                               //if body doesn't parse to dict, ignore
-  .api.addCORS .api.xc[`POST;.api.getf x;a,.api.prms b]                               //run function & return as JSON
+  .api.addCORS .api.execute[`POST;.api.getf x;a,.api.prms b]                               //run function & return as JSON
  };
 
 .z.ws:{ p:.j.k x; .u.sub[p`table;p`indices]};
